@@ -18,7 +18,8 @@ def create_random_txt_files(num_files, file_size, output_dir):
 
 # 해시값 비교 함수
 def compare_hashes(files_dir,option):
-    #dict로 충돌
+    #dict에 해쉬값들 저장
+    #list에 충돌케이스 저
     hash_dict = {} 
     collided_files = []
 
@@ -76,7 +77,7 @@ def main():
         sys.exit(1)
 
     num_files = sys.argv[2]  # 생성할 파일의 개수
-    file_size = 1000  # 파일의 크기 (바이트)
+    file_size = 100  # 파일의 크기 (바이트)
     option = sys.argv[1]
     filepath = sys.argv[3]
 
