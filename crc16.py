@@ -2,7 +2,9 @@ import os
 import random
 import string
 import sys
-
+import crcmod
+import hashlib
+import zlib
 
 # 파일 생성 함수
 def create_random_txt_files(num_files, file_size, output_dir):
@@ -14,26 +16,46 @@ def create_random_txt_files(num_files, file_size, output_dir):
         with open(filepath, 'w') as f:
             f.write(''.join(random.choices(string.ascii_letters + string.digits, k=file_size)))
 
-# CRC-16 해시값 비교 함수
-def compare_crc16_hashes(files_dir):
+# 해시값 비교 함수
+def compare_hashes(files_dir,option):
     #dict로 충돌
-    crc16_hashes = {} 
+    hash_dict = {} 
     collided_files = []
 
-    # 디렉토리 내의 모든 파일에 대해 CRC-16 해시값 계산
+    # 디렉토리 내의 모든 파일에 대해 해시값 계산
     for filename in os.listdir(files_dir):
         filepath = os.path.join(files_dir, filename)
-        crc16_hash = calculate_crc16(filepath)
 
-        # 해시값이 충돌하는 경우
-        if crc16_hash in crc16_hashes:
-            collided_files.append((filename, crc16_hashes[crc16_hash]))
+        if option == "sha256":
+            hash = calculate_sha256(filepath)
+        elif option == "crc16":
+            hash = calculate_crc16(filepath)
+        elif option == "crc32":
+            hash = calculate_crc32(filepath)
         else:
-            crc16_hashes[crc16_hash] = filename
+            print("Invalid option. Please choose sha256, crc16, or crc32.")
+            sys.exit(1)
+
+        
+        # 해시값이 충돌하는 경우
+        if hash in hash_dict:
+            collided_files.append((filename, hash_dict[hash]))
+        else:
+            hash_dict[hash] = filename
 
     return collided_files
 
-# CRC-16 해시값 계산 함수
+
+def calculate_sha256(filepath):
+    sha256 = hashlib.sha256()
+    with open(filepath, 'rb') as f:
+        while True:
+            data = f.read(1024)  # 1024 바이트씩 읽어서 처리
+            if not data:
+                break
+            sha256.update(data)
+    return sha256.hexdigest()
+
 def calculate_crc16(filepath):
     crc16_func = crcmod.mkCrcFun(0x11021, rev=False, initCrc=0, xorOut=0xFFFFFFFF)
     with open(filepath, 'rb') as f:
@@ -41,31 +63,32 @@ def calculate_crc16(filepath):
         crc16 = crc16_func(data)
     return format(crc16, 'x')
 
+def calculate_crc32(filepath):
+    prev = 0
+    with open(filepath, 'rb') as f:
+        for eachLine in f:
+            prev = zlib.crc32(eachLine, prev)
+    return format(prev & 0xFFFFFFFF, 'x')
+
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: python crc16.py [directory_name_to_make_txt_files]")
+    if len(sys.argv) < 3:
+        print("Usage: python compare_hash.py [sha256|crc16|crc32] [directory_name_to_make_txt_files]")
         sys.exit(1)
 
     num_files = 1000  # 생성할 파일의 개수
     file_size = 1000  # 파일의 크기 (바이트)
-    output_dir = sys.argv[1]  # 생성된 파일을 저장할 디렉토리
+    option = sys.argv[1]
+    filepath = sys.argv[2]
 
-    # 디렉토리가 없으면 생성
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    else:
-        print("There is same directory name")
-        sys.exit(1)
-
+    os.makedirs(filepath)
 
     # 랜덤한 텍스트 파일 생성
-    create_random_txt_files(num_files, file_size, output_dir)
+    create_random_txt_files(num_files, file_size, filepath)
 
-    # CRC-16 해시값 비교하여 충돌 확인
-    collided_files = compare_crc16_hashes(output_dir)
+    collided_files = compare_hashes(filepath,option)
 
     
-    print("CRC-16 해시 충돌이 발생한 파일들:")
+    print("해시 충돌이 발생한 파일들:")
     for file1, file2 in collided_files:
             print(file1+"와"+file2)
     print("실행 종료")
