@@ -8,7 +8,7 @@ import zlib
 
 # 파일 생성 함수
 def create_random_txt_files(num_files, file_size, output_dir):
-    for i in range(num_files):
+    for i in range(int(num_files)):
         filename = str(i) + ".txt"
         filepath = os.path.join(output_dir, filename)
         
@@ -18,7 +18,8 @@ def create_random_txt_files(num_files, file_size, output_dir):
 
 # 해시값 비교 함수
 def compare_hashes(files_dir,option):
-    #dict로 충돌
+    #dict에 해쉬값들 저장
+    #list에 충돌케이스 저
     hash_dict = {} 
     collided_files = []
 
@@ -71,14 +72,14 @@ def calculate_crc32(filepath):
     return format(prev & 0xFFFFFFFF, 'x')
 
 def main():
-    if len(sys.argv) < 3:
-        print("Usage: python compare_hash.py [sha256|crc16|crc32] [directory_name_to_make_txt_files]")
+    if len(sys.argv) < 4:
+        print("Usage: python compare_hash.py [sha256|crc16|crc32] [filenumbers] [directory_name_to_make_txt_files]")
         sys.exit(1)
 
-    num_files = 1000  # 생성할 파일의 개수
-    file_size = 1000  # 파일의 크기 (바이트)
+    num_files = sys.argv[2]  # 생성할 파일의 개수
+    file_size = 100  # 파일의 크기 (바이트)
     option = sys.argv[1]
-    filepath = sys.argv[2]
+    filepath = sys.argv[3]
 
     os.makedirs(filepath)
 
@@ -90,7 +91,7 @@ def main():
     
     print("해시 충돌이 발생한 파일들:")
     for file1, file2 in collided_files:
-            print(file1+"와"+file2)
+            print(file1+ "와 "+file2)
     print("실행 종료")
 
     
